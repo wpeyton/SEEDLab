@@ -23,4 +23,4 @@
 
     C++ source code to run on Arduino uno which:
         - Sets motor on
-        - Outputs encoder position and timestamp to serial monitor every 10 ms
+        - Outputs encoder position and timestamp to serial monitor every 10 ms until position hits 10 rad
