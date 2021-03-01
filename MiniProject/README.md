@@ -1,4 +1,4 @@
-# MiniProject Folder
+# MiniProject
 
 **This folder contains:**
 
