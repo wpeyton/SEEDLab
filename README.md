@@ -18,3 +18,9 @@
         - Applies positional PI controller algorithm
         - Sets motor speed/direction
         - Sends current position value over I2C to Pi
+
+**OpenLoopStepResponse.ino**
+
+    C++ source code to run on Arduino uno which:
+        - Sets motor on
+        - Outputs encoder position and timestamp to serial monitor every 10 ms
