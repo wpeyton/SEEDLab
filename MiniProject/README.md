@@ -1,6 +1,6 @@
-# SEEDLabMiniProject
+# MiniProject Folder
 
-**This repo contains:**
+**This folder contains:**
 
 **mini_project.py**
 
