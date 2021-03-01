@@ -2,10 +2,10 @@
 
 **Authors: **
 
-    Andrew Burton
-    Trevor Bachand
-    William Peyton
-    Kyra Squier
+    - Andrew Burton
+    - Trevor Bachand
+    - William Peyton
+    - Kyra Squier
 
 **Each project is contained by a subfolder: **
 
