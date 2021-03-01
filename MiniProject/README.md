@@ -32,4 +32,4 @@
         - Reads current position
         - Applies positional PI controller algorithm
         - Sets motor speed/direction
-        - Outputs encoder position and timestamp to serial monitor every 5 ms until position hits 10 rad
+        - Outputs encoder position and timestamp to serial monitor every 5 ms for 5 sec
