@@ -9,5 +9,6 @@ Authors:
 
 Each project is contained by a subfolder:
 
-    Projects:
-        - MiniProject
+    - MiniProject
+    - Demo1
+    - Demo2
