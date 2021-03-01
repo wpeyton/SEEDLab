@@ -7,7 +7,7 @@
     - William Peyton
     - Kyra Squier
 
-The purpose of this repo is to act as a central storage location for files for group 10 SEED Lab projects. 
+The purpose of this repo is to act as a central storage location for files for Group 10 SEED Lab projects. 
 
 **Each project is contained by a subfolder:**
 
