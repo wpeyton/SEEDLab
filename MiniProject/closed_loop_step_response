@@ -20,7 +20,6 @@ bool M1_Dir_Val = true;             // Value to store dir of motor -- set true f
 int  M1_PWM_Val = 0;                // Value to store speed of motor -- set value between 0 and 255 (0 to not move, 255 is max speed)
 
 long myPosition  = 0;   // Store current position in cts
-double myAngle = 0;     // Store current position in rads
 
 float theta;                        // Radians
 float thetaDesired;                 // Radians
@@ -52,7 +51,7 @@ void setup() {
   Serial.println("Open Loop Step Response:"); // Print header to serial
 
   startTimeForSerial = millis();         // Get program start time
-  previousTimeForSerial = startTime - 5; // Initiate prevtime value
+  previousTimeForSerial = startTimeForSerial - 5; // Initiate prevtime value
   
   digitalWrite(M1_DIR, M1_Dir_Val); // Set motor direction
   analogWrite(M1_PWM, M1_PWM_Val);  // Set motor speed
@@ -73,13 +72,13 @@ void loop() {
     previousTimeForSerial = currentTimeForSerial; // Reset previousTimeForSerial
 
     // Print time stamp and angular pos to serial monitor
-    Serial.print(currentTime - startTime);
+    Serial.print(currentTimeForSerial - startTimeForSerial);
     Serial.print("\t");
     Serial.print(theta, 6);
     Serial.print("\r\n");
     
   } else if (currentTimeForSerial - startTimeForSerial > 5000 ){ // Once you hit 5 sec, stop
-    digitalWrite(M1_Enable, LOW);
+    digitalWrite(M_ENABLE, LOW);
   }
 }
 
