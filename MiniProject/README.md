@@ -2,6 +2,10 @@
 
 **This folder contains:**
 
+**MATLABCode Subfolder**
+
+    Contains MATLAB and EXCEL files from MiniProject
+
 **mini_project.py**
 
     Python source code to run on Raspberry Pi which:
