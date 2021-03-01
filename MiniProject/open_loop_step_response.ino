@@ -38,7 +38,7 @@ void setup() {
   Serial.begin(115200);         // Begin serial
   while (!Serial);              // Wait for serial monitor to open
 
-  Serial.println("Step Response:"); // Print header to serial
+  Serial.println("Open Loop Step Response:"); // Print header to serial
 
   startTime = millis();         // Get program start time
   previousTime = startTime - 5; // Initiate prevtime value
