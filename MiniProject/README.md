@@ -19,7 +19,7 @@
         - Sets motor speed/direction
         - Sends current position value over I2C to Pi
 
-**OpenLoopStepResponse.ino**
+**open_loop_step_response.ino**
 
     C++ source code to run on Arduino uno which:
         - Sets motor on
