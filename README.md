@@ -3,6 +3,7 @@
 This repo contains:
 
 mini_project.py
+
     Python source code to run on the Pi which:
         Gets set value from shell
         Communicates state via I2C with arduino
@@ -10,6 +11,7 @@ mini_project.py
         Displays current position of the wheel and set position on LCD via I2C
         
 mini_project.ino
+
     C++ source code to run on Arduino uno which: 
         Reads in set value over I2C from Pi
         Reads current position
