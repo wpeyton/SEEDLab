@@ -19,7 +19,8 @@
 bool M1_Dir_Val = true;             // Value to store dir of motor -- set true for cw rotation and false for ccw
 int  M1_PWM_Val = 0;                // Value to store speed of motor -- set value between 0 and 255 (0 to not move, 255 is max speed)
 
-long myPosition  = 0;               // Store current position in cts
+long myPosition  = 0;   // Store current position in cts
+double myAngle = 0;     // Store current position in rads
 
 float theta;                        // Radians
 float thetaDesired;                 // Radians
@@ -31,75 +32,54 @@ float Kp = 27;                      // Proportional gain
 float Ki = 6;                       // Integral gain
 int umax = 12;                      // Max ouput of controller (V)
 
-int startTime = 0;                  // variable store program start time (ms)
+int startTimeForSerial = 0;      // Store program start time in millis
+int previousTimeForSerial = 0;   // Store previous loop iteration start time in millis
+int currentTimeForSerial = 0;    // Store current loop iteration start time in millis
 
 Encoder myEnc(2, 5);                // Declare encoder object, with pin A = 2 (IOC) and pin B = 5
 
 // Runs once at first boot up
 void setup() {
-  pinMode(M_ENABLE, OUTPUT);        // Define enable pin as output
-  pinMode(M1_DIR, OUTPUT);          // Define direction pin as output
-  pinMode(M1_PWM, OUTPUT);          // Define pwm pin as output
-  pinMode(TARE, INPUT_PULLUP);      // Define tare pin as input -- configure internal pullup
-  digitalWrite(M_ENABLE, HIGH);     // IMPORTANT!! -- set enable pin high
+  pinMode(M_ENABLE, OUTPUT);    // Define enable pin as output
+  pinMode(M1_DIR, OUTPUT);      // Define direction pin as output
+  pinMode(M1_PWM, OUTPUT);      // Define pwm pin as output
   
-  startTime = millis();
+  digitalWrite(M_ENABLE, HIGH); // IMPORTANT!! -- set enable pin high
 
-  digitalWrite(M1_DIR, M1_Dir_Val); // Set initial motor direction to cw
-  analogWrite(M1_PWM, M1_PWM_Val);  // Set initial motor speed to 0
+  Serial.begin(115200);         // Begin serial
+  while (!Serial);              // Wait for serial monitor to open
+
+  Serial.println("Open Loop Step Response:"); // Print header to serial
+
+  startTimeForSerial = millis();         // Get program start time
+  previousTimeForSerial = startTime - 5; // Initiate prevtime value
+  
+  digitalWrite(M1_DIR, M1_Dir_Val); // Set motor direction
+  analogWrite(M1_PWM, M1_PWM_Val);  // Set motor speed
+  
+  thetaDesired = 1.00;
 }
 
 // Runs repeatedly as long as power is applied to the arduino
 void loop() {
-  if(!digitalRead(TARE)) {          // If the tare button is pressed, 
-    zeroPosition();                 // Run the taring subroutine
-  }
-  updateSetPos(data_in);            // Update the set position to the most recent state value sent over I2C from the Pi
   updateCurrentPos();               // Read the encoder and update the position variables
   PI_Controller();                  // Apply the control algorithm
   setMotors();                      // Set the motor outputs to values determined by control algorithm
-  convertData(data_out, theta);     // Update the array of bytes storing the digits of the current position to send to the Pi
-}
+  
+  currentTimeForSerial = millis();           // Get current time in millis
 
-// Interrupt routine called when Pi sends data to the arduino
-void receiveData(int byteCount) {
-  while (Wire.available())              // While the Pi sends bytes, read them in
-    data_in = Wire.read();
-  if (data_in == 0 || data_in == 255) { // If either a 0 or 255 is detected, try reading again
-    data_in = Wire.read();
-  }
-}
+  // If more than 5 ms have passed since prev iteration an you are still under 5 sec since start, then
+  if (currentTimeForSerial - previousTimeForSerial >= 5 && currentTimeForSerial - startTimeForSerial <= 5000 ) {
+    previousTimeForSerial = currentTimeForSerial; // Reset previousTimeForSerial
 
-// Interrupt routine called when arduino sends data to Pi
-void sendData() {
-  Wire.write(data_out, 3); // Write the array of bytes describing the first three digits of the position
-}
-
-// Update the array of bytes storing the digits of the current position to send to the Pi
-void convertData(byte *pData, double currPos) {
-  pData[0] = currPos;                         // Store the ones digit of currPos
-  pData[1] = pData[0] * 10 - pData[0] * 10;   // Store the tenths digit of currPos
-  pData[2] = pData[1] * 10 - pData[1] * 10;   // Store the hundreths digit of currPos
-}
-
-// Update the set position to the most recent state value sent over I2C from the Pi
-void updateSetPos(int nextPos) {
-  switch(nextPos) {
-    case 0:
-      thetaDesired = 0;
-      break;
-    case 1: 
-      thetaDesired = 1.57;
-      break;
-    case 2:
-      thetaDesired = 3.14;
-      break;
-    case 3:
-      thetaDesired = 4.71;
-      break;
-    case 4: 
-      thetaDesired = 0;
-      break;
+    // Print time stamp and angular pos to serial monitor
+    Serial.print(currentTime - startTime);
+    Serial.print("\t");
+    Serial.print(theta, 6);
+    Serial.print("\r\n");
+    
+  } else if (currentTimeForSerial - startTimeForSerial > 5000 ){ // Once you hit 5 sec, stop
+    digitalWrite(M1_Enable, LOW);
   }
 }
 
@@ -156,15 +136,4 @@ void setMotors() {
   // Set the motor controller inputs accordingly
   digitalWrite(M1_DIR, M1_Dir_Val);
   analogWrite(M1_PWM, M1_PWM_Val);
-}
-
-// Tare the encoder position
-void zeroPosition() { 
-  digitalWrite(M_ENABLE, LOW);    // Disable the motor
-  while(!digitalRead(TARE));      // Wait until tare button is released
-  myEnc.write(0);                 // Reset the encoder position
-  myPosition = 0;                 // Reset position variables
-  theta = 0;                      // Reset position variables
-  digitalWrite(M_ENABLE, HIGH);   // Re-enable the motors
-  delay(250);                     // Wait a little bit to prevent issues
 }
