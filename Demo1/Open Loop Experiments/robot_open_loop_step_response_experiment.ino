@@ -20,19 +20,19 @@
 #define M2_DIR    8                 // Motor 1 direction pin -- set true for cw rotation and false for ccw
 #define M2_PWM   10                 // Motor 1 pwm pin -- set value between 0 and 255 (0 to not move, 255 is max speed)
 
-long startTimeForSerial = 0;         // Store previous loop iteration start time in millis
-long currentTimeForSerial = 0;       // Store current loop iteration start time in millis
+long startTimeForSerial = 0;        // Store previous loop iteration start time in millis
+long currentTimeForSerial = 0;      // Store current loop iteration start time in millis
 
-float theta1 = 0;
-float theta2 = 0;
+float theta1 = 0;                   // Store the position of wheel 1 (in radians)
+float theta2 = 0;                   // Store the position of wheel 2 (in radians)
 
 Encoder enc1(2, 5);                 // Declare encoder object, with pin A = 2 (IOC) and pin B = 5
 Encoder enc2(3, 6);                 // Declare encoder object, with pin A = 3 (IOC) and pin B = 6
 
-bool isRotating = true;
-
-int pos1 = 0;
-int pos2 = 0;
+bool isRotating = true;             // If true, perform rotation open loop response, otherwise perform translation open loop response
+    
+int pos1 = 0;                       // Store the position of wheel 1 (in counts)
+int pos2 = 0;                       // Store the position of wheel 2 (in counts)
 
 void setup() {
   pinMode(M_ENABLE, OUTPUT);        // Define enable pin as output
@@ -51,26 +51,28 @@ void setup() {
 
   startTimeForSerial = micros();    // Get program start time
 
-  enc1.write(0);
-  enc2.write(0);
+  enc1.write(0);                    // Tare the encoders
+  enc2.write(0);                    // Tare the encoders
   
   digitalWrite(M1_DIR, false);       // Set motor direction
-  analogWrite(M1_PWM, 128);         // Set motor speed
+  analogWrite(M1_PWM, 128);          // Set motor speed
   digitalWrite(M2_DIR, !isRotating); // Set motor direction
-  analogWrite(M2_PWM, 128);         // Set motor speed
+  analogWrite(M2_PWM, 128);          // Set motor speed
 
 }
 
 void loop() {
+  // Only run for 3 s
   while (currentTimeForSerial - startTimeForSerial <= 3000000) {
-    currentTimeForSerial = micros();
+    currentTimeForSerial = micros(); // Record time stamp
 
-    pos1 = enc1.read();
-    pos2 = enc2.read();
+    pos1 = enc1.read(); // Record wheel positions
+    pos2 = enc2.read(); // Record wheel positions
 
     theta1 = -2 * PI * pos1 / COUNTS_PER_REVOLUTION;  // Convert counts to radians
-    theta2 = 2 * PI * pos2 / COUNTS_PER_REVOLUTION;  // Convert counts to radians
+    theta2 = 2 * PI * pos2 / COUNTS_PER_REVOLUTION;   // Convert counts to radians
     
+    // Print out time and position data
     Serial.print(0.000001 * (currentTimeForSerial - startTimeForSerial), 6);
     Serial.print("\t\t");
     Serial.print(theta1, 6);
@@ -78,7 +80,8 @@ void loop() {
     Serial.print(theta2, 6);
     Serial.print("\r\n");
   }
-
+  
+  // After 3 second loop, disable the motors
   digitalWrite(M_ENABLE, LOW);  
 
 }
