@@ -1,6 +1,6 @@
 # Open Loop Experiments
 
-**This subfolder contains: **
+**This subfolder contains:**
 
 **robot_open_loop_step_response_experiment.ino**
 
@@ -8,3 +8,8 @@
         - set motors to half power (if bool is rotating = true, motors spin in opposite directions)
         - report encoder positions to the serial monitor
         - stop after 3 seconds
+
+**excel file name**
+    
+    This excel file contains the collected datam and calculates the angular velocity and linear velocity. 
+    These are plotted to determine system model parameters.
