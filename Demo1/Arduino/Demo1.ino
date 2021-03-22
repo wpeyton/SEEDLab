@@ -163,17 +163,21 @@ void phi_controller() {
 
 }
 
+// Apply feedback control to calculate motor voltages to rotate as desired
 void phi_dot_controller() {
-  phi_dot = - r * (theta_dot_1 - theta_dot_2) / d;
-  phi_dot_error = phi_dot_set - phi_dot;
+  phi_dot = - r * (theta_dot_1 - theta_dot_2) / d;    // Calculate angular velocity
+  phi_dot_error = phi_dot_set - phi_dot;              // Calculate angular velocity error
 
+  // Error bounding
   if (phi_dot_error < -8.0) phi_dot_error = -8.0;
   if (phi_dot_error > 8.0) phi_dot_error = 8.0;
 
+  // Update the integral term, apply integral clamping
   if (abs(phi_dot_total_error) < 0.5 || (phi_dot_error < 0 && phi_dot_total_error > 0) || (phi_dot_error > 0 && phi_dot_total_error < 0)) {
     phi_dot_total_error += (phi_dot_error * 0.001); // Increment the integral of the error
   }
 
+  // Apply feedback control alorithm to calculate deltaVa
   delta_Va = - (Kp_phi_dot * phi_dot_error + Ki_phi_dot * phi_dot_total_error);
 }
 
@@ -191,16 +195,20 @@ void rho_dot_controller() {
   Va = Kp_rho_dot * rho_dot_error + Ki_rho_dot * rho_dot_total_error;
 }
 
+// Scale the controller outputs to be pwm values
 void setMotorVals() {
+  // Calculate the pwm value for each motor based on Va, deltaVa
   M1_PWM_Val = (int) (255 * (Va + delta_Va) / 2.0);
   M2_PWM_Val = (int) (255 * (Va - delta_Va) / 2.0);
 
+  // Set motor directions
   if (M1_PWM_Val > 0) M1_Dir_Val = false;
   else M1_Dir_Val = true;
 
   if (M2_PWM_Val > 0) M2_Dir_Val = true;
   else M2_Dir_Val = false;
 
+  // Make PWM output unsigned
   M1_PWM_Val = abs(M1_PWM_Val);
   M2_PWM_Val = abs(M2_PWM_Val);
 }
