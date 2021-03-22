@@ -138,22 +138,26 @@ void readEncoders() {
 
 // Apply feedback control to calculate necessary angular velocity
 void phi_controller() {
-  phi = - r * (theta_1 - theta_2) / d;  // Calculate current angle
-  phi_error_prev = phi_error;
-  phi_error = phi_set - phi;
+  phi = - r * (theta_1 - theta_2) / d;      // Calculate current angle
+  phi_error_prev = phi_error;               // Store prev error
+  phi_error = phi_set - phi;                // Calculate current error
 
+  // Error bounding
   if (phi_error < -1.0) phi_error = -1.0;
   if (phi_error > 1.0) phi_error = 1.0;
 
+  // Calculate integral of the error, apply integral clamping
   if (abs(phi_total_error) < 0.5 || (phi_error < 0 && phi_total_error > 0) || (phi_error > 0 && phi_total_error < 0)) {
     phi_total_error += (phi_error * 0.001); // Increment the integral of the error
   }
 
+  // Calculate derivative of the error
   phi_error_dot = (phi_error - phi_error_prev) * 1000;
   
+  // Apply PID control algorithm to determine angular velocity
   phi_dot_set = Kp_phi * phi_error + Kd_phi * phi_error_dot;
-  // Ki_phi * phi_total_error
   
+  // Output bounding
   if (phi_dot_set > 8.0) phi_dot_set = 8.0;
   if (phi_dot_set < -8.0) phi_dot_set = -8.0;
 
