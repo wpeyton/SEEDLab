@@ -9,7 +9,7 @@
         - report encoder positions to the serial monitor
         - stop after 3 seconds
 
-**excel file name**
+**RobotOpenLoopResponse.xlsx**
     
     This excel file contains the collected datam and calculates the angular velocity and linear velocity. 
     These are plotted to determine system model parameters.
