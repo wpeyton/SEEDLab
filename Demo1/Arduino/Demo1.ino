@@ -1,3 +1,11 @@
+/*  Group 10 - Andrew Burton, Trevor Bachand, William Peyton, & Kyra Squier
+    EENG350B - SEED Lab
+    Demo1 Controller Arduino Code
+    05 March 2021
+    Description:
+    The following program runs the full control algorithm. It has set points for num_ft_to_move and num_deg_to_turn.
+*/
+
 #include <Encoder.h>                // Encoder Library
 
 #define COUNTS_PER_REVOLUTION 3200  // Number of counts per revolution on the encoder on the motor
@@ -60,17 +68,17 @@ const float Kp_phi_dot = 0.1;       // Velocity controller proportional gain
 const float Ki_phi_dot = 1;         // Velocity controller proportional gain
 
 // Vars for trans_speed_controller
-float rho_dot_set = 0.0;
+float rho_dot_set = 0.0;            // Desired translational velocity (in m/s)
 
-float rho_dot = 0;
-float rho_dot_error = 0;
-float rho_dot_total_error = 0;
+float rho_dot = 0;                  // Current translational speed (in m/s)
+float rho_dot_error = 0;            // Translational speed error (in m/s)
+float rho_dot_total_error = 0;      // Integral of translational speed error (in m)
 
-const float Kp_rho_dot = 1;
-const float Ki_rho_dot = 5;
+const float Kp_rho_dot = 1;         // Translational speed controller proportional gain
+const float Ki_rho_dot = 5;         // Translational speed controller integral gain
 
-int startTime = 0;
-int currentTime = 0;
+int startTime = 0;                  // Store program start time
+int currentTime = 0;                // Store current time
 
 void setup() {
   // put your setup code here, to run once:
