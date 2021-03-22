@@ -189,17 +189,21 @@ void phi_dot_controller() {
   delta_Va = - (Kp_phi_dot * phi_dot_error + Ki_phi_dot * phi_dot_total_error);
 }
 
+// Apply feedback control to calculate motor voltages to translate as desired
 void rho_dot_controller() {
-  rho_dot = r * (theta_dot_1 + theta_dot_2) / 2.0;
-  rho_dot_error = rho_dot_set - rho_dot;
+  rho_dot = r * (theta_dot_1 + theta_dot_2) / 2.0;  // Calculate linear velocity
+  rho_dot_error = rho_dot_set - rho_dot;            // Calculate linear velocity error
 
+  // Error bounding
   if (rho_dot_error < -1.0) rho_dot_error = -1.0;
   if (rho_dot_error > 1.0) rho_dot_error = 1.0;
 
+  // Update the integral term, apply integral clamping
   if (abs(rho_dot_total_error) < 0.5 || (rho_dot_error < 0 && rho_dot_total_error > 0) || (rho_dot_error > 0 && rho_dot_total_error < 0)) {
     rho_dot_total_error += (rho_dot_error * 0.001); // Increment the integral of the error
   }
 
+  // Apply feedback control alorithm to calculate Va
   Va = Kp_rho_dot * rho_dot_error + Ki_rho_dot * rho_dot_total_error;
 }
 
