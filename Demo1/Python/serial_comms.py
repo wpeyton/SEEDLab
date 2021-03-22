@@ -5,7 +5,7 @@ import busio
 import adafruit_character_lcd.character_lcd_rgb_i2c as character_lcd
 import serial
 
-### LCD INITIALIZATION ###
+### LCD INITIALIZATION ### commented out for testing purposes
 # for RPI version 1, use “bus = smbus.SMBus(0)”
 #bus = smbus.SMBus(1)
 # Initialise I2C bus.
@@ -29,15 +29,15 @@ line = ""
 # x= 10 y = 0
 # x = 10 y = 10
 
-if __name__ == '__main__':
+if __name__ == '__main__': # pi send data 
     ser = serial.Serial('/dev/ttyACM0', 115200, timeout=1)
     ser.flush()
 
-def sendData():
+def sendData(): #sends data 
     ser.write(b"Hello from Raspberry Pi!\n")
     return 0
 
-def recData():
+def recData(): #recieves serial data 
     if ser.in_waiting > 0:
             line = ser.readline().decode('utf-8').rstrip()
             print(line)
@@ -46,7 +46,7 @@ def recData():
 while True:
     try:
         sendData()
-        time.sleep(.1)
+        time.sleep(.1) #for testing purposes
         recData()
         
     except OSError:
