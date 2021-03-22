@@ -2,7 +2,7 @@
 
 **This folder contains:**
 
-**OpenLoopStepResponse Subfolder**
+**Open Loop Experiments Subfolder**
 
     Contains arduino code used to collect open loop response
     Contains excel sheet with collected data and plots
