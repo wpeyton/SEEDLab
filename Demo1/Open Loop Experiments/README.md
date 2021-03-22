@@ -11,5 +11,5 @@
 
 **RobotOpenLoopResponse.xlsx**
     
-    This excel file contains the collected datam and calculates the angular velocity and linear velocity. 
+    This excel file contains the collected data and calculates the angular velocity and linear velocity. 
     These are plotted to determine system model parameters.
