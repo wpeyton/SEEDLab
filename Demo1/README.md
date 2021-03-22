@@ -2,10 +2,6 @@
 
 **This folder contains:**
 
-**MATLABCode Subfolder**
-
-    Contains MATLAB and EXCEL files from MiniProject
-
 **OpenLoopStepResponse Subfolder**
 
     Contains arduino code used to collect open loop response
