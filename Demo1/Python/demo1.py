@@ -74,11 +74,11 @@ while(True):
     corners, ids, rejectedImgPoints = aruco.detectMarkers(grayImage, aruco_dict, parameters = parameters)
 
     if len(corners) == 0:
-        print("NO ArUco marker detected")
+        print("NO ArUco marker detected") #sees if there is no aruco marker present and prints
 
     else:
 
-        for markers in corners:
+        for markers in corners: 
             for marker in markers:
                 for corner in marker:
                     position_x += corner[0]
@@ -87,11 +87,11 @@ while(True):
                 position_x /= 4
                 position_y /= 4
 
-        position_center = position_x - (width/2)
+        position_center = position_x - (width/2) #calculates the angle to the marker
         position_angle = (position_center/(width/2))*fov
 
         
-        print("ArUco Marker Detected")
+        print("ArUco Marker Detected") #outputs marker angle and name
         lcd.message = "ArUco Marker\nDetected"
         sleep(.1)
         print("ArUco ID: ",ids)         
@@ -101,13 +101,13 @@ while(True):
         grayImage = aruco.drawDetectedMarkers(grayImage, corners)
         cv2.imshow('test', grayImage)
         
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
+ #   cv2.waitKey(0) 
+#    cv2.destroyAllWindows()
         
 
 
     # Exit Image - for testing
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
+#    cv2.waitKey(0)
+  #  cv2.destroyAllWindows()
 
 
