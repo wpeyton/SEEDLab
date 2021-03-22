@@ -1,3 +1,13 @@
+/*  Group 10 - Andrew Burton, Trevor Bachand, William Peyton, & Kyra Squier
+    EENG350B - SEED Lab
+    Translational Speed Controller Arduino Code
+    05 March 2021
+    Description:
+    The following program runs the translational speed feedback control algorithm. 
+    A translational speed set point is stored as a variable, and the motor outputs are calculated to 
+    get the robot to move forward at that speed. 
+*/
+
 #include <Encoder.h>                // Encoder Library
 
 #define COUNTS_PER_REVOLUTION 3200  // Number of counts per revolution on the encoder on the motor
@@ -17,30 +27,30 @@ int  M1_PWM_Val = 0;                // Value to store speed of motor 1 -- set va
 int  M2_PWM_Val = 0;                // Value to store speed of motor 2 -- set value between 0 and 255 (0 to not move, 255 is max speed)
 
 // Vars for all controllers
-const float r = 7.5 * 0.01;
-const float d = 23.3 * 0.01;
+const float r = 7.5 * 0.01;         // Radius of the wheel
+const float d = 25 * 0.01;          // Distance between the wheels
 
-float Va = 0;
-float delta_Va = 0;
+float Va = 0;                       // Control algorithm output, between [-1.0, 1.0], describes linear motion
+float delta_Va = 0;                 // Control algorithm output, between [-1.0, 1.0], describes rotational motion
 
-float theta_1_previous = 0;
-float theta_2_previous = 0;
+float theta_1_previous = 0;         // Store the previous value to determine the derivative terms
+float theta_2_previous = 0;         // Store the previous value to determine the derivative terms
 
-float theta_1 = 0;
-float theta_2 = 0;
+float theta_1 = 0;                  // Store the current position of wheel 1 in radians 
+float theta_2 = 0;                  // Store the current position of wheel 2 in radians
 
-float theta_dot_1 = 0;
-float theta_dot_2 = 0;
+float theta_dot_1 = 0;              //  Store the current velocity of wheel 1 in radians per second  
+float theta_dot_2 = 0;              //  Store the current velocity of wheel 2 in radians per second
 
 // Vars for trans_speed_controller
-float rho_dot_set = 0.5;
+float rho_dot_set = 0.5;            // Desired translational velocity (in m/s)
 
-float rho_dot = 0;
-float rho_dot_error = 0;
-float rho_dot_total_error = 0;
+float rho_dot = 0;                  // Current translational speed (in m/s)
+float rho_dot_error = 0;            // Translational speed error (in m/s)
+float rho_dot_total_error = 0;      // Integral of translational speed error (in m)
 
-const float Kp_rho_dot = 0.25;
-const float Ki_rho_dot = 1.5;
+const float Kp_rho_dot = 0.25;      // Translational speed controller proportional gain
+const float Ki_rho_dot = 1.5;       // Translational speed controller integral gain
 
 void setup() {
   // put your setup code here, to run once:
@@ -50,73 +60,85 @@ void setup() {
   pinMode(M2_DIR, OUTPUT);          // Define direction pin as output
   pinMode(M2_PWM, OUTPUT);          // Define pwm pin as output
 
-  Serial.begin(9600);
-  while (!Serial);
+  Serial.begin(9600);               // Initialize Serial comms
+  while (!Serial);                  // Wait for initialization
 
   digitalWrite(M_ENABLE, HIGH);     // IMPORTANT!! -- set enable pin high
-  digitalWrite(M1_DIR, true); // Set initial motor direction to cw
-  analogWrite(M1_PWM, 0);  // Set initial motor speed to 0
-  digitalWrite(M2_DIR, true); // Set initial motor direction to cw
-  analogWrite(M2_PWM, 0);  // Set initial motor speed to 0
+  digitalWrite(M1_DIR, true);       // Set initial motor direction to cw
+  analogWrite(M1_PWM, 0);           // Set initial motor speed to 0
+  digitalWrite(M2_DIR, true);       // Set initial motor direction to cw
+  analogWrite(M2_PWM, 0);           // Set initial motor speed to 0
 
-  OCR0A = 0xAF;
-  TIMSK0 |= _BV(OCIE0A);
+  OCR0A = 0xAF;                     // Set TMR0 interrupt comparison value
+  TIMSK0 |= _BV(OCIE0A);            // Enable TMR0 interrupt
 }
 
 void loop() {
-  // put your main code here, to run repeatedly:
+  // Set motor ouputs to the calculated values
   digitalWrite(M1_DIR, M1_Dir_Val);
   analogWrite(M1_PWM, M1_PWM_Val);
   digitalWrite(M2_DIR, M2_Dir_Val);
   analogWrite(M2_PWM, M2_PWM_Val);
 
-  delay(50);
+  delay(50); // Wait 50 ms
+  
+  // Print out debug info to serial monitor
   Serial.print(M1_PWM_Val);
   Serial.print("\t");
   Serial.println(M2_PWM_Val);
 }
 
+// TMR0 interrupt service routine
 SIGNAL(TIMER0_COMPA_vect) {
-  readEncoders();
-  rho_dot_controller();
-  setMotorVals();
+  readEncoders();           // Get current position
+  rho_dot_controller();     // Calculate Va
+  setMotorVals();           // Scale ouput for PWM
 }
 
-void readEncoders() {
-  theta_1_previous = theta_1;
-  theta_2_previous = theta_2;
 
-  theta_1 = -2.0 * PI * enc1.read() / COUNTS_PER_REVOLUTION;  // Convert counts to radians
-  theta_2 = 2.0 * PI * enc2.read() / COUNTS_PER_REVOLUTION;  // Convert counts to radians
+void readEncoders() {   
+  theta_1_previous = theta_1;   // Store previous value
+  theta_2_previous = theta_2;   // Store previous value
 
-  theta_dot_1 = (theta_1 - theta_1_previous) * 1000;
-  theta_dot_2 = (theta_2 - theta_2_previous) * 1000;
+  theta_1 = -2.0 * PI * enc1.read() / COUNTS_PER_REVOLUTION;  // Store position in radians
+  theta_2 = 2.0 * PI * enc2.read() / COUNTS_PER_REVOLUTION;   // Store position in radians
+
+  theta_dot_1 = (theta_1 - theta_1_previous) * 1000;          // Calculate angular velocity
+  theta_dot_2 = (theta_2 - theta_2_previous) * 1000;          // Calculate angular velocity
 }
 
+// Apply feedback control to calculate motor voltages to translate as desired
 void rho_dot_controller() {
-  rho_dot = r * (theta_dot_1 + theta_dot_2) / 2.0;
-  rho_dot_error = rho_dot_set - rho_dot;
+  rho_dot = r * (theta_dot_1 + theta_dot_2) / 2.0;    // Calculate linear velocity
+  rho_dot_error = rho_dot_set - rho_dot;              // Calculate linear velocity error
 
+  // Error bounding
   if (rho_dot_error < -1.0) rho_dot_error = -1.0;
   if (rho_dot_error > 1.0) rho_dot_error = 1.0;
 
+  // Update the integral term, apply integral clamping
   if (abs(rho_dot_total_error) < 0.5 || (rho_dot_error < 0 && rho_dot_total_error > 0) || (rho_dot_error > 0 && rho_dot_total_error < 0)) {
     rho_dot_total_error += (rho_dot_error * 0.001); // Increment the integral of the error
   }
 
+  // Apply feedback control alorithm to calculate Va
   Va = Kp_rho_dot * rho_dot_error + Ki_rho_dot * rho_dot_total_error;
 }
 
+// Scale the controller outputs to be pwm values
 void setMotorVals() {
+  // Calculate the pwm value for each motor based on Va, deltaVa
   M1_PWM_Val = (int) (255 * (Va + delta_Va) / 2.0);
   M2_PWM_Val = (int) (255 * (Va - delta_Va) / 2.0);
 
+  // Set motor directions
   if (M1_PWM_Val > 0) M1_Dir_Val = false;
   else M1_Dir_Val = true;
 
   if (M2_PWM_Val > 0) M2_Dir_Val = true;
   else M2_Dir_Val = false;
 
+  // Make PWM output unsigned
   M1_PWM_Val = abs(M1_PWM_Val);
   M2_PWM_Val = abs(M2_PWM_Val);
 }
