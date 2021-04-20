@@ -1,7 +1,10 @@
+# Demo2
+
+**This folder contains:**
+
 **Arduino Subfolder**
 
-    Contains code for the individual speed and position controllers
-    Contains Demo1 code with all controllers combined
+    Contains Demo2 code
     
 **Python Subfolder**
 
