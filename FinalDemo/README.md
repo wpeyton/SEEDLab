@@ -4,7 +4,7 @@
 
     - "FIND_FIRST\r\n": 
         - Pi should constantly search for any marker, and reply back as quickly as possible when one is found. 
-        - Don't worry about calculating the position at this point, focus on running this as fast as possible so the robot can be stopped immediately when the marker is found.             - When marker is found, proper reply is "10\r\n"
+        - Don't worry about calculating the position at this point, focus on running this as fast as possible so the robot can be stopped immediately when the marker is found.           - When marker is found, proper reply is "10\r\n"
 
     - "FIND_LOC\r\n": 
         -  Robot is currently stationary.
