@@ -5,6 +5,7 @@
     - "FIND_FIRST\r\n": 
         - Pi should constantly search for any marker, and reply back as quickly as possible when one is found. 
         - Don't worry about calculating the position at this point, focus on running this as fast as possible so the robot can be stopped immediately when the marker is found.             - When marker is found, proper reply is "10\r\n"
+
     - "FIND_LOC\r\n": 
         -  Robot is currently stationary.
         -  Initialize a 6x3x2 matrix of floats to store data , with starting values of NaN
@@ -18,3 +19,19 @@
         -  Return the position of the marker that is furthest to the right in the image (most negative angle, or if none are negative smallest angle)
             -  Format "11aX.XXXdX.XXX\r\n" where X.XXX is replaced with the actual values. 
             -  If no markers were found (all NaNs), reply back "01\r\n". 
+
+**From Pi to Arduino:**
+
+    - "00\r\n":
+        - E-STOP (stop the robot)
+
+    - "01\r\n":
+        - No marker found
+   
+    - "10\r\n":
+        - Marker Found (no location data)
+
+    - "11aX.XXXdX.XXX\r\n":
+        - Marker found (with location data)
+            - Ex: "aX.XXXdX.XXX\r\n
+
