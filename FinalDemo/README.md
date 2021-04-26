@@ -33,5 +33,5 @@
 
     - "11aX.XXXdX.XXX\r\n":
         - Marker found (with location data)
-            - Ex: "aX.XXXdX.XXX\r\n
+            - Ex: "11a0.248d1.152\r\n"
 
