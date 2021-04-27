@@ -45,7 +45,7 @@ float marker_location_absolute[2] = {0.00}; // [phi][rho]
 
 // ITERATION TRACKING
 int num_markers_traversed = 0;
-int num_markers_total = 6;
+int num_markers_total = 3;
 
 // Current state variable
 state_t current_state = SEARCH_INITIAL;
@@ -137,7 +137,7 @@ void setup() {
 
 void loop() {
   currentTime = millis();           // Record current time
-
+  
   if (Serial.available() > 0) {
     dataRead();
   }
@@ -147,6 +147,8 @@ void loop() {
   analogWrite(M1_PWM, M1_PWM_Val);
   digitalWrite(M2_DIR, M2_Dir_Val);
   analogWrite(M2_PWM, M2_PWM_Val);
+
+  // Serial.println(current_state);
 
   switch (current_state) {
     case SEARCH_INITIAL:    // Rotate on central axis until the first marker is found
