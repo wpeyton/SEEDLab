@@ -8,27 +8,26 @@ import cv2.aruco as aruco
 import math
 from math import log10, floor
 
-# markerOrder = [0, 1, 2]
-# targetMarker = markerOrder[0]
 targetMarker = 0
-
 ardString = ""
 
 # Camera Setup
-##camera = PiCamera()
-##camera.rotation = 180
-##rawCapture = PiRGBArray(camera)
+# camera = PiCamera()
+# camera.rotation = 180
+# rawCapture = PiRGBArray(camera)
+# fov = 29
+# camera.resolution = (width,height)
+# camera.framerate = 22
+# awb_mode = 'off'
+# camera.iso = 100
+# camera.brightness = 75
+
 width = 1920
 height = 1088
-##fov = 29
-##camera.resolution = (width,height)
-##camera.framerate = 22
-##awb_mode = 'off'
-##camera.iso = 100
-##camera.brightness = 75
 
 cap = cv2.VideoCapture(0)
 
+## FIX ME!!!
 cap.set(cv2.CAP_PROP_FRAME_WIDTH, width)
 cap.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
 # cap.set(cv2.CAP_PROP_BRIGHTNESS, 0.8)
@@ -44,12 +43,6 @@ if __name__ == '__main__': ## set up serial communication
 
 def sendCmd(cmd):
     data = cmd
-    #data = data + "a"
-    #angleStr = str(angle)
-    #distanceStr = str(distance)
-    #data = data + angleStr + "d"
-    #data = data + distanceStr
-    #print(data)
     x = data + "\n" #encodes info so that you can send a list
     ser.write((x).encode('utf-8'))
     return None
@@ -90,76 +83,92 @@ while(True):
     distance1 = 0
     distance2 = 0 
 
+    # FIND_FIRST Loop
     if (ardString.find("FIND_FIRST") != -1):
         print("Entering Find First Loop")
         exitFlag = False
         while(exitFlag == False):
-            # Capturing Image
-            #print("Capturing Image")
-##            camera.capture(rawCapture, format = "bgr")
-##            image = rawCapture.array
-##            rawCapture.truncate(0)
+            # Capturing Image (Old Method)
+            # print("Capturing Image")
+            # camera.capture(rawCapture, format = "bgr")
+            # image = rawCapture.array
+            # rawCapture.truncate(0)
             
+            # Capture Image (New Method)
             ret, frame = cap.read()
-
             gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-
-            #cv2.imshow('frame', gray)
-            #if(cv2.waitKey(1) & 0xFF == ord('q')):
-            #   break
+            
+            # Uncomment me to show the camera feed!
+            # cv2.imshow('frame', gray)
+            # if(cv2.waitKey(1) & 0xFF == ord('q')):
+            #    break
                        
-
-            # Detecting Aruco
-#            resize = cv2.resize(image, None, fx=1, fy=1, interpolation = cv2.INTER_LINEAR)
-#            grayImage = cv2.cvtColor(resize, cv2.COLOR_BGR2GRAY)
+            # Instatiate Aruco Parameters
             parameters = aruco.DetectorParameters_create()
-#            corners, ids, rejectedImgPoints = aruco.detectMarkers(grayImage, aruco_dict, parameters = parameters)
+            
+            # Detecting Aruco (Old Method)
+            # resize = cv2.resize(image, None, fx=1, fy=1, interpolation = cv2.INTER_LINEAR)
+            # grayImage = cv2.cvtColor(resize, cv2.COLOR_BGR2GRAY)
+            # corners, ids, rejectedImgPoints = aruco.detectMarkers(grayImage, aruco_dict, parameters = parameters)
+            
+            # Detecting Aruco (New Method)
             corners, ids, rejectedImgPoints = aruco.detectMarkers(gray, aruco_dict, parameters = parameters)
+            
+            # If there was a marker in the frame: 
             if len(corners) != 0:
-                #print("Detected at least one Marker")
+                # print("Detected at least one Marker")
+                # Loop through all the markers found to fing the correct one
                 x = 0
                 while x < len(ids): 
                     if (ids[x][0] == targetMarker): # This looks for the target marker and then decides if it's in the list
+                        print("Detected Marker with Correct ID")
                         sendCmd("10")
                         ardString = ""
-                        print("Detected Marker with Correct ID")
                         exitFlag = True
                         print("Exiting Find First Loop")
                         break
                     x = x + 1
 
+    # FIND_LOC Loop
     if (ardString.find("FIND_LOC") != -1):
         exitFlag = False
         print("Entering Find Loc Loop")
         while(exitFlag == False):
-            # Capturing Image
-            #camera.start_preview(alpha = 200)   # For testing
-            #print("Capturing Image")
-##            camera.capture(rawCapture, format = "bgr")
-##            image = rawCapture.array
-##            #camera.stop_preview()   # For testing
-##            rawCapture.truncate(0)
-
+            # Capturing Image (old Method)
+            # camera.start_preview(alpha = 200)   # For testing
+            # print("Capturing Image")
+            # camera.capture(rawCapture, format = "bgr")
+            # image = rawCapture.array
+            # camera.stop_preview()   # For testing
+            # rawCapture.truncate(0)
+            
+            # Capture Image (New Method)
             ret, frame = cap.read()
-
             gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
-            #cv2.imshow('frame', gray)
-            #if(cv2.waitKey(1) & 0xFF == ord('q')):
-            #   break
-
-            # Detecting Aruco
-##            resize = cv2.resize(image, None, fx=1, fy=1, interpolation = cv2.INTER_LINEAR)
-##            grayImage = cv2.cvtColor(resize, cv2.COLOR_BGR2GRAY)
+            # Uncomment me to show the camera feed!
+            # cv2.imshow('frame', gray)
+            # if(cv2.waitKey(1) & 0xFF == ord('q')):
+            #    break
+            
+            # Instatiate Aruco Parameters
             parameters = aruco.DetectorParameters_create()
-##            corners, ids, rejectedImgPoints = aruco.detectMarkers(grayImage, aruco_dict, parameters = parameters)
+            
+            # Detecting Aruco (Old Method)
+            # resize = cv2.resize(image, None, fx=1, fy=1, interpolation = cv2.INTER_LINEAR)
+            # grayImage = cv2.cvtColor(resize, cv2.COLOR_BGR2GRAY)
+            # corners, ids, rejectedImgPoints = aruco.detectMarkers(grayImage, aruco_dict, parameters = parameters)
+            
+            # Detecting Aruco (New Method)
             corners, ids, rejectedImgPoints = aruco.detectMarkers(gray, aruco_dict, parameters = parameters)
-               
+            
+            # If no markers were found: 
             if len(corners) == 0:
                 print("NO Aruco marker detected") #sees if there is no aruco marker present and prints
                 sendCmd("01")
-                #CORNERS: [order in image (left to right)][?][Corner number, clockwise rotation starting @ top left][?]
+                # CORNERS: [order in image (left to right)][?][Corner number, clockwise rotation starting @ top left][?]
             
+            # If a marker was found
             else:
                 print("Detected at least one Marker")
                 x = 0
@@ -195,35 +204,14 @@ while(True):
                         print("Exiting Find Loc Loop")
                         break
                     x = x + 1
-
-            
+                            
                 ardString = ""
-                # increment marker target
-                # markerOrder.pop(0)
-                # targetMarker = markerOrder[0]
+                
+                # Increment marker target
                 targetMarker = targetMarker + 1
                 print("New Target: ", targetMarker)
                 #print("Aruco ID[0]:", ids)
                 #print("Size", len(ids))
-
-            
-
-
-
-            # LOOK IN IMAGE FOR MARKERS-
-            # WHEN MARKERS ARE FOUND, CHECK TO SEE IF THE TARGET MARKER IS IN THE
-            # LIST.
-            # IF NOT, KEEP LOOKING. DO NOT SEND MARKER DATA IF IT IS NOT THE
-            # TARGET MARKER.
-            # CONTINUE TO ONLY TRANSMIT DATA ABOUT TARGET MARKER UNTIL MARKER IS REACHED
-            # ARDUINO WILL SEND STATUS MESSAGES BACK TO THE PI.
-            # ONCE THAT MARKER IS REACHED- ITERATE THE TARGET MARKER AND SEND THAT ONE
-            # TO THE ARDUINO. CONTINUE PROCESS UNTIL WE FINISH THE LOOP. 
         
 cap.release()
 cv2.destroyAllWindows()
-
-
-
-
-
