@@ -38,6 +38,10 @@ bool find_first = false;
 // FIND_LOC Active
 bool find_loc = false;
 
+// Increment Marker False;
+bool increment_marker = false;
+
+
 // Marker location data
 bool found_marker = false;
 float marker_location_relative[2] = {0.00}; // [phi][rho]
@@ -123,6 +127,14 @@ void setup() {
   Serial.begin(115200);             // Initialize Serial comms
   while (!Serial);                  // Wait for initialization
 
+  //  while (true) {
+  //    if (Serial.available() > 0) {
+  //      if (Serial.readStringUntil('\n') == "START") break;
+  //    }
+  //  }
+
+  delay(2000);
+
   digitalWrite(M_ENABLE, HIGH);     // IMPORTANT!! -- set enable pin high
   digitalWrite(M1_DIR, true);       // Set initial motor direction to cw
   analogWrite(M1_PWM, 0);           // Set initial motor speed to 0
@@ -137,7 +149,7 @@ void setup() {
 
 void loop() {
   currentTime = millis();           // Record current time
-  
+
   if (Serial.available() > 0) {
     dataRead();
   }
@@ -147,8 +159,6 @@ void loop() {
   analogWrite(M1_PWM, M1_PWM_Val);
   digitalWrite(M2_DIR, M2_Dir_Val);
   analogWrite(M2_PWM, M2_PWM_Val);
-
-  // Serial.println(current_state);
 
   switch (current_state) {
     case SEARCH_INITIAL:    // Rotate on central axis until the first marker is found
@@ -172,8 +182,8 @@ void loop() {
           find_first = true;
           Serial.println("FIND_FIRST");
         }
-        
-        phi_dot_set = 0.3;
+
+        phi_dot_set = 0.4;
         rho_dot_set = 0;
 
         run_phi_controller = false;
@@ -207,19 +217,24 @@ void loop() {
           Serial.println("FIND_LOC");
         }
 
-        phi_set = phi;
-        phi_dot_set = 0;
-        rho_dot_set = 0;
+        if(currentTime - startTime >= 8000) {
+          current_state = SEARCH_INITIAL;
+        } else {
+          
+          phi_set = phi;
+          phi_dot_set = 0;
+          rho_dot_set = 0;
 
-        run_phi_controller = false;
-        run_phi_dot_controller = false;
-        run_rho_dot_controller = false;
+          run_phi_controller = false;
+          run_phi_dot_controller = false;
+          run_rho_dot_controller = false;
+        }
+        
       }
       break;
 
     case ALIGN: // Align robot direction with marker to travel to
       if (abs(marker_location_absolute[0] - phi) <= 0.02) {
-        current_state = APPROACH;
 
         run_phi_controller = false;
         run_phi_dot_controller = false;
@@ -231,6 +246,7 @@ void loop() {
         rho_dot_set = 0;
 
         startTime = millis();
+        current_state = APPROACH;
 
       } else {
         run_phi_controller = true;
@@ -242,7 +258,10 @@ void loop() {
     case APPROACH: // Travel straight forward, length determined by distance from marker
       if (currentTime - startTime >= rho_set * 1825) {
         num_markers_traversed++;
-
+//            if (increment_marker) {
+//              Serial.println("INCREMENT");
+//              increment_marker = false;
+//            }
         if (num_markers_traversed < num_markers_total) {
           current_state = ROT_90_CW;
         } else {
@@ -272,8 +291,9 @@ void loop() {
 
     case ROT_90_CW: // Rotate 90 deg cw
       if (abs(phi_set - phi) <= 0.02) {
+        
         current_state = SEARCH_NEXT;
-
+        increment_marker = true;
         run_phi_controller = false;
         run_phi_dot_controller = false;
         run_rho_dot_controller = false;
@@ -286,7 +306,7 @@ void loop() {
 
       } else {
         phi_set = marker_location_absolute[0] - (PI / 2);
-        
+
         run_phi_controller = true;
         run_phi_dot_controller = true;
         run_rho_dot_controller = false;
@@ -294,7 +314,9 @@ void loop() {
       break;
 
     case SEARCH_NEXT: // Drive slowly in a circle until the next marker is found
+    
       if (found_marker) {
+        
         current_state = LOCATE_MARKER;
 
         find_first = false;
@@ -313,10 +335,21 @@ void loop() {
         if (!find_first) {
           find_first = true;
           Serial.println("FIND_FIRST");
+
+          phi_dot_set = 0.4;
+          rho_dot_set = 0.15;
         }
 
-        phi_dot_set = 0.4;
-        rho_dot_set = 0.15;
+        if(currentTime - startTime >= 8000) {
+          phi_dot_set *= -1;
+          rho_dot_set *= -1;
+
+          startTime = millis();
+        }
+//        if (increment_marker) {
+//              Serial.println("INCREMENT");
+//              increment_marker = false;
+//            }
 
         run_phi_controller = false;
         run_phi_dot_controller = true;
@@ -326,7 +359,7 @@ void loop() {
       break;
 
     case STOP: // Stop the robot
-      Serial.println("STOP");
+      // Serial.println("STOP");
       digitalWrite(M_ENABLE, LOW);
       phi_set = phi;
       phi_dot_set = 0;
@@ -448,16 +481,17 @@ void dataRead() { // pass by reference marker_phi & phi_set
   int cmd = 2 * ((int) pi_data[0] - 48) + ((int) pi_data[1] - 48);
 
   switch (cmd) {
-    case 0: 
+    case 0:
       current_state = STOP;
+      Serial.println("STOP");
       break;
     case 1:
-      
+
       break;
-    case 2: 
+    case 2:
       found_marker = true;
       break;
-    case 3: 
+    case 3:
       found_marker = true;
       int angle_loc = pi_data.indexOf('a');
       int distance_loc = pi_data.indexOf('d');
@@ -468,5 +502,5 @@ void dataRead() { // pass by reference marker_phi & phi_set
       marker_location_absolute[0] = marker_location_relative[0] + phi;
       marker_location_absolute[1] = marker_location_relative[1];
       break;
-  }  
-}
+  }
+} 
