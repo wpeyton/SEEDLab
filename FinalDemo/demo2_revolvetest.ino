@@ -1,11 +1,12 @@
 /*  Group 10 - Andrew Burton, Trevor Bachand, William Peyton, & Kyra Squier
     EENG350B - SEED Lab
     Demo2 Controller Arduino Code
-    07 April 2021
+    02 May 2021
     Description:
     The following program runs the full control algorithm.
     It takes in a set point from the Pi over serial, travels to it, and then circles the marker.
 */
+
 #include <Encoder.h>                // Encoder Library
 #define COUNTS_PER_REVOLUTION 3200  // Number of counts per revolution on the encoder on the motor
 
@@ -21,12 +22,14 @@ bool found_marker = false;
 bool align = true;
 
 bool run_phi_controller = false;
-bool run_rho_controller = false;
+bool run_phi_dot_controller = false;
+bool run_rho_dot_controller = false;
 
-float marker_phi = 0;
-float marker_rho = 0;
+float marker_phi_rel = 0;
+float marker_rho_rel = 0;
 
-float phi_at_revolve_start = 0;
+float marker_phi_abs = 0;
+float marker_rho_abs = 0;
 
 typedef enum {
   SEARCH,
@@ -98,10 +101,6 @@ const float Ki_rho_dot = 5;         // Translational speed controller integral g
 int startTime = 0;                  // Store program start time
 int currentTime = 0;                // Store current time
 
-float rho_set = 0;
-
-int align_counter = 0;
-
 void setup() {
   // put your setup code here, to run once:
   pinMode(M_ENABLE, OUTPUT);        // Define enable pin as output
@@ -130,10 +129,8 @@ void loop() {
   currentTime = millis();
   
   if (Serial.available() > 0) {
-    dataRead(marker_phi, marker_rho); // phi & rho passed by reference into program
-    if (current_state != REVOLVE) {
-      found_marker = true;
-    }
+    dataRead();
+    found_marker = true;
   }
   
   // Set motor ouputs to the calculated values
@@ -146,123 +143,147 @@ void loop() {
     case SEARCH:
       if (found_marker) {
         current_state = ALIGN;
+          
         align = true;
         
-        rho_dot_set = 0;
+        phi_set = phi;
         phi_dot_set = 0;
-        
-        run_rho_controller = false;
+        rho_dot_set = 0;
+            
         run_phi_controller = false;
+        run_phi_dot_controller = false;
+        run_rho_dot_controller = false;
         
         found_marker = false;
+          
         startTime = millis();
+          
       } else {
         phi_dot_set = 0.25;
         rho_dot_set = 0;
 
-        run_rho_controller = false;
         run_phi_controller = false;
+        run_phi_dot_controller = true;
+        run_rho_dot_controller = false;
       }
       break;
-//    case ALIGN:
-//      if (align && found_marker) {
-//        if (align_counter > 10) {
-//          rho_dot_set = 0;
-//          phi_dot_set = 0;
-//          run_phi_controller = true;
-//          phi_set = (marker_phi / 2) + phi;
-//        align_counter += 1;
-//        delay(500);
-//        }
-//        align  = false;
-//        delay(50);
-//      }
-//      else if (found_marker && abs(phi_error) <= 0.02) {
-//        current_state = APPROACH;
-//        rho_set = marker_rho;
-//        startTime = millis();
-//      }
-//      else if(!found_marker) {
-//        if (currentTime - startTime > 1000) {
-//          phi_dot_set = -0.2;
-//        }
-////      }
-//      break;
 
     case ALIGN:
       if (align && found_marker) {
-        rho_dot_set = 0;
+        phi_set = marker_phi_abs;
         phi_dot_set = 0;
+        rho_dot_set = 0;  
+          
         run_phi_controller = true;
-        phi_set = (marker_phi / 2) + phi;
+        run_phi_dot_controller = true;
+        run_rho_dot_controller = false;
+
         align  = false;
-        delay(50);
-      }
-      else if (found_marker && abs(phi_error) <= 0.02) {
+        
+      } else if (found_marker && abs(marker_phi_abs - phi) <= 0.02) {
         current_state = APPROACH;
-        delay(50);
-        rho_set = marker_rho;
+          
+        phi_set = phi;
+        phi_dot_set = 0;
+        rho_dot_set = 0;
+            
+        run_phi_controller = false;
+        run_phi_dot_controller = false;
+        run_rho_dot_controller = false;
+        
+        found_marker = false;
+          
         startTime = millis();
-      }
-      else if(!found_marker) {
+          
+      } else if(!found_marker) {
         if (currentTime - startTime > 2000) {
-          phi_dot_set = -0.1;
+          current_state = SEARCH;
         }
       }
       break;
       
     case APPROACH:
-      run_rho_controller = true;
-
-            // if (abs(marker_rho) <= 0.65) {
-            if (currentTime - startTime >= rho_set * 1825) {
-              phi_dot_set = 0;
-              rho_dot_set = 0;
-              startTime = millis();
-              if (do_revolve) {
-                current_state = REVOLVE;
-                phi_at_revolve_start = phi;
-                delay(15);
-                found_marker = false;
-              } else
-                current_state = STOP;
-            } else if (found_marker) {
-              //phi_set = phi + marker_phi;
-              rho_dot_set = 0.5;
-              found_marker = false; //added
-            }
+       if (currentTime - startTime >= marker_rho_abs * 1825) {
+          
+         if (do_revolve) {
+            current_state = REVOLVE;
+            phi_at_revolve_start = phi;
+          } else {
+            current_state = STOP;
+          }
+          
+          phi_set = phi;
+          phi_dot_set = 0;
+          rho_dot_set = 0;
+            
+          run_phi_controller = false;
+          run_phi_dot_controller = false;
+          run_rho_dot_controller = false;
+           
+          startTime = millis();
+           
+        } else {
+          phi_set = phi;
+          phi_dot_set = 0;
+          rho_dot_set = 0.5;
+            
+          run_phi_controller = false;
+          run_phi_dot_controller = true;
+          run_rho_dot_controller = true;
+        }
 
       break;
 
     case REVOLVE:
-
-      delay(500);
-      if (currentTime - startTime >= 9450) {
+      if (currentTime - startTime >= 7500) {
         current_state = STOP;
-      } else if (currentTime - startTime >= 1400) {
-        run_phi_controller = false;
-        phi_dot_set = 0.8; //0.8
-        rho_dot_set = 0.3; //0.3
       } else if (currentTime - startTime >= 1350) {
+        phi_dot_set = 1;
+        rho_dot_set = 0.5;
+            
         run_phi_controller = false;
-        phi_dot_set = 0.8; //0.8
-        rho_dot_set = 0.8; //0.8
+        run_phi_dot_controller = true;
+        run_rho_dot_controller = true;
+          
+//       } else if (currentTime - startTime >= 1350) {
+//         phi_dot_set = 0.8;
+//         rho_dot_set = 0.8;
+            
+//         run_phi_controller = false;
+//         run_phi_dot_controller = true;
+//         run_rho_dot_controller = true;
+          
       } else if (currentTime - startTime >= 1300) {
-        run_phi_controller = false;
+        phi_set = phi;
         phi_dot_set = 0;
-        rho_dot_set = 0;
-      } else {
-        run_phi_controller = true;
-        phi_set = phi_at_revolve_start - (PI / 2);
         rho_dot_set = 0.0;
+            
+        run_phi_controller = false;
+        run_phi_dot_controller = false;
+        run_rho_dot_controller = false;
+          
+      } else {
+        phi_set = phi_at_revolve_start - (PI / 2);
+        phi_dot_set = 0;
+        rho_dot_set = 0.0;
+            
+        run_phi_controller = true;
+        run_phi_dot_controller = true;
+        run_rho_dot_controller = false;
       }
       break;
+    
     case STOP:
-      Serial.println("Stop");
       digitalWrite(M_ENABLE, LOW);
+    
       phi_set = phi;
       phi_dot_set = 0;
       rho_dot_set = 0;
+    
+      run_phi_controller = false;
+      run_phi_dot_controller = false;
+      run_rho_dot_controller = false;
+    
       break;
   }
 
@@ -270,14 +291,16 @@ void loop() {
 
 // TMR0 interrupt service routine
 SIGNAL(TIMER0_COMPA_vect) {
-  readEncoders();       // Get current position
-  if (run_phi_controller) phi_controller();    // Calculate necessary angular speed
-  phi_dot_controller(); // Calculate deltaVa
-  if (run_rho_controller) rho_dot_controller(); // Calcualte Va
-  setMotorVals();       // Scale ouput for PWM
+  Va = 0;
+  delta_Va = 0;
+  readEncoders();                                   // Get current position
+  if (run_phi_controller) phi_controller();         // Calculate necessary angular speed
+  if (run_phi_dot_controller) phi_dot_controller(); // Calculate deltaVa
+  if (run_rho_dot_controller) rho_dot_controller(); // Calcualte Va
+  setMotorVals();                                   // Scale ouput for PWM
 }
 
-// Record current position and velocuty of the wheels
+// Record current position and velocity of the wheels
 void readEncoders() {
   theta_1_previous = theta_1;   // Store previous value
   theta_2_previous = theta_2;   // Store previous value
@@ -288,14 +311,13 @@ void readEncoders() {
   theta_dot_1 = (theta_1 - theta_1_previous) * 1000;          // Calculate angular velocity
   theta_dot_2 = (theta_2 - theta_2_previous) * 1000;          // Calculate angular velocity
 
-  phi = - r * (theta_1 - theta_2) / d;      // Calculate current angle
-  phi_dot = - r * (theta_dot_1 - theta_dot_2) / d;    // Calculate angular velocity
-  rho_dot = r * (theta_dot_1 + theta_dot_2) / 2.0;  // Calculate linear velocity
+  phi = - r * (theta_1 - theta_2) / d;                        // Calculate current angle
+  phi_dot = - r * (theta_dot_1 - theta_dot_2) / d;            // Calculate angular velocity
+  rho_dot = r * (theta_dot_1 + theta_dot_2) / 2.0;            // Calculate linear velocity
 }
 
 // Apply feedback control to calculate necessary angular velocity
 void phi_controller() {
-  phi = - r * (theta_1 - theta_2) / d;      // Calculate current angle
   phi_error_prev = phi_error;               // Store prev error
   phi_error = phi_set - phi;                // Calculate current error
 
@@ -317,12 +339,10 @@ void phi_controller() {
   // Output bounding
   if (phi_dot_set > 8.0) phi_dot_set = 8.0;
   if (phi_dot_set < -8.0) phi_dot_set = -8.0;
-
 }
 
 // Apply feedback control to calculate motor voltages to rotate as desired
 void phi_dot_controller() {
-  phi_dot = - r * (theta_dot_1 - theta_dot_2) / d;    // Calculate angular velocity
   phi_dot_error = phi_dot_set - phi_dot;              // Calculate angular velocity error
 
   // Error bounding
@@ -340,7 +360,6 @@ void phi_dot_controller() {
 
 // Apply feedback control to calculate motor voltages to translate as desired
 void rho_dot_controller() {
-  rho_dot = r * (theta_dot_1 + theta_dot_2) / 2.0;  // Calculate linear velocity
   rho_dot_error = rho_dot_set - rho_dot;            // Calculate linear velocity error
 
   // Error bounding
@@ -375,14 +394,16 @@ void setMotorVals() {
 }
 
 
-void dataRead(float &targetPhi, float &targetRho) { //pass by reference marker_phi & phi_set
+void dataRead() {
   String piData = Serial.readStringUntil('\n');
   int len = piData.length();
   if (piData[0] == 'a') {
     int distanceLoc = piData.indexOf('d');
     String angleStr = piData.substring(1, distanceLoc);
     String disStr = piData.substring(distanceLoc + 1, len);
-    targetPhi = angleStr.toFloat();
-    targetRho = disStr.toFloat();
+    marker_phi_rel = angleStr.toFloat();
+    marker_phi_abs = marker_phi_rel + phi;
+    marker_rel_rel = disStr.toFloat();
+    marker_rel_abs = marker_rho_rel;
   }
 }
