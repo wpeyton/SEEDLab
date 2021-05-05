@@ -1,3 +1,6 @@
+Final_demo2.py and final_demo2 are the two files used for our final demo and contain all associated code.
+
+
 **Serial Communication Dictionary**
 
 **From Arduino to Pi:**
